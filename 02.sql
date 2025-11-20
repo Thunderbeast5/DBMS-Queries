@@ -13,6 +13,11 @@ CREATE TABLE employee (
     county VARCHAR(50)
 );
 -- Insert Sample Employee Data
+CREATE SEQUENCE emp_seq
+START WITH 11
+INCREMENT BY 1;
+
+
 INSERT INTO employee VALUES
 (1, 'Rajesh Kumar', 'Manager', 'Mumbai', 45000, '400001', 'Maharashtra'),
 (2, 'Priya Sharma', 'Developer', 'Mumbai', 38000, '400002', 'Maharashtra'),
@@ -25,117 +30,39 @@ INSERT INTO employee VALUES
 (9, 'Arjun Mehta', 'Manager', 'Chennai', 52000, '600001', 'Tamil Nadu'),
 (10, 'Pooja Iyer', 'Analyst', 'Mumbai', 44000, '400005', 'Maharashtra');
 -- Create Sequence for Employee Number
-CREATE SEQUENCE emp_seq
-START WITH 11
-INCREMENT BY 1
-MINVALUE 1
-MAXVALUE 9999
-CYCLE;
 
--- Using sequence to insert new employee
-INSERT INTO employee VALUES
-(NEXT VALUE FOR emp_seq, 'New Employee', 'Position', 'City', 30000, '000000', 'County');
+INSERT INTO employee(empno, empname, designation, city, salary, zipcode, county)
+VALUES(emp_seq.NEXTVAL, 'Raj', 'Manager', 'Mumbai', 45000, '071', 'India');
 
--- Alternative: Using AUTO_INCREMENT (MySQL specific)
--- Modify table to use AUTO_INCREMENT
-ALTER TABLE employee MODIFY empno INT AUTO_INCREMENT;
 
--- Insert without specifying empno
-INSERT INTO employee (empname, designation, city, salary, zipcode, county) VALUES
-('Auto Employee', 'Developer', 'Mumbai', 35000, '400006', 'Maharashtra');
--- Create Index on county column
 CREATE INDEX idx_county ON employee(county);
 
--- Create Index with specific name
-CREATE INDEX county_index ON employee(county);
-
--- Show indexes on the table
-SHOW INDEX FROM employee;
-
--- Note: The question asks for "country" but table has "county"
--- Assuming it means county
-
--- First, create index on zipcode for better performance
-CREATE INDEX idx_zipcode ON employee(zipcode);
-
--- Query to find county with zipcode = '071'
-SELECT county, empname, city
+SELECT county
 FROM employee
 WHERE zipcode = '071';
 
--- Check if index is used - Use EXPLAIN
-EXPLAIN SELECT county, empname, city
+
+CREATE VIEW emp_mumbai_lowpay AS
+SELECT empno, empname, city, salary
 FROM employee
-WHERE zipcode = '071';
-
--- Alternative: Find county with zipcode starting with 071
-SELECT county, empname, city
-FROM employee
-WHERE zipcode LIKE '071%';
-
--- Check execution plan
-EXPLAIN SELECT county, empname, city
-FROM employee
-WHERE zipcode LIKE '071%';
-
--- Create View for Mumbai employees with salary < 50000
-CREATE VIEW mumbai_employees_low_salary AS
-SELECT empno, empname, designation, city, salary, zipcode, county
-FROM employee
-WHERE salary < 50000 AND city = 'Mumbai';
-
--- Query the view
-SELECT * FROM mumbai_employees_low_salary;
+WHERE salary < 50000
+  AND city = 'Mumbai';
 
 
--- Count employees in Mumbai using the view
-SELECT COUNT(*) AS mumbai_employee_count
-FROM mumbai_employees_low_salary;
-
--- Alternative: Direct count from main table
-SELECT COUNT(*) AS total_mumbai_employees
+SELECT COUNT(*)
 FROM employee
 WHERE city = 'Mumbai';
 
--- Count from view with salary filter
-SELECT COUNT(*) AS count_mumbai_low_salary
-FROM mumbai_employees_low_salary;
 
--- Average salary from the view
-SELECT AVG(salary) AS average_salary
-FROM mumbai_employees_low_salary;
+SELECT AVG(salary)
+FROM emp_mumbai_lowpay;
 
--- With formatting
-SELECT ROUND(AVG(salary), 2) AS average_salary
-FROM mumbai_employees_low_salary;
 
--- Detailed statistics from view
-SELECT 
-    COUNT(*) AS total_employees,
-    AVG(salary) AS average_salary,
-    MIN(salary) AS minimum_salary,
-    MAX(salary) AS maximum_salary
-FROM mumbai_employees_low_salary;
+SELECT empname
+FROM emp_mumbai_lowpay
+WHERE street IN (
+    SELECT street FROM emp_mumbai_lowpay
+    GROUP BY street
+    HAVING COUNT(*) > 1
+);
 
--- Note: The table doesn't have a 'street' column
--- Assuming you want employees from same city or zipcode
-
--- Option 1: Employees from same city as those in view
-SELECT DISTINCT e.empname, e.city, e.zipcode
-FROM employee e
-WHERE e.city IN (SELECT DISTINCT city FROM mumbai_employees_low_salary);
-
--- Option 2: Employees with same zipcode as employees in view
-SELECT e.empname, e.zipcode, e.city
-FROM employee e
-WHERE e.zipcode IN (SELECT DISTINCT zipcode FROM mumbai_employees_low_salary);
-
--- Option 3: If table had 'street' column, query would be:
--- SELECT e.empname, e.street
--- FROM employee e
--- WHERE e.street IN (SELECT DISTINCT street FROM mumbai_employees_low_salary);
-
--- Option 4: Show employees from view grouped by zipcode (similar area)
-SELECT empname, city, zipcode
-FROM mumbai_employees_low_salary
-ORDER BY zipcode;

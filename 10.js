@@ -89,12 +89,8 @@ db.books.insertMany([
 
 // 1. Find the number of books published by "Ajay"
 db.books.aggregate([
-  {
-    $match: { BY: "Ajay" }
-  },
-  {
-    $count: "total_books_by_ajay"
-  }
+  {$match: { BY: "Ajay" }},
+  { $count: "total_books_by_ajay"}
 ])
 
 // Alternative method using countDocuments
@@ -102,9 +98,7 @@ db.books.countDocuments({ BY: "Ajay" })
 
 // Alternative using group
 db.books.aggregate([
-  {
-    $match: { BY: "Ajay" }
-  },
+  
   {
     $group: {
       _id: "$BY",
@@ -213,8 +207,8 @@ db.books.aggregate([
   {
     $group: {
       _id: "$BY",
-      first_book: { $first: "$$ROOT" },
-      last_book: { $last: "$$ROOT" }
+      first_book: { $first: "$TITLE" },
+      last_book: { $last: "$TITLE" }
     }
   }
 ])

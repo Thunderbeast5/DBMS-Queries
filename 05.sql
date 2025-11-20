@@ -1,4 +1,11 @@
 -- Create the database
+sudo -i -u postgres
+psql
+
+sudo -U postgres
+psql
+
+
 CREATE DATABASE library_db;
 
 -- Connect to it
